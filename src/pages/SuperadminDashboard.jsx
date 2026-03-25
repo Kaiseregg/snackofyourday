@@ -46,14 +46,44 @@ export default function SuperadminDashboard() {
   if (!authReady) return <div className='panel'>Lädt…</div>
   if (!allowed) return <div className='panel errorBox'>Du bist nicht als Superadmin freigeschaltet.</div>
 
+  const sendInvite = () => {
+    const tenant = tenants.find((t) => t.id === assign.tenant_id)
+    if (!assign.email || !tenant) return alert('Bitte E-Mail und Kunde wählen.')
+    const loginUrl = `${window.location.origin}/${tenant.slug}/admin/login`
+    const subject = encodeURIComponent(`Kunden-Admin Zugang für ${tenant.display_name}`)
+    const body = encodeURIComponent(`Hallo,
+
+du wurdest als Kunden-Admin für ${tenant.display_name} vorgesehen.
+
+1. Öffne zuerst den Login-Link:
+${loginUrl}
+2. Registriere dich bzw. logge dich einmal ein.
+3. Danach kann der Hauptadmin dich freischalten.
+
+Viele Grüsse
+SnackOfYourDay`) 
+    window.open(`mailto:${assign.email}?subject=${subject}&body=${body}`)
+  }
+
+  const copyInvite = async () => {
+    const tenant = tenants.find((t) => t.id === assign.tenant_id)
+    if (!tenant) return alert('Bitte zuerst Kunde wählen.')
+    const loginUrl = `${window.location.origin}/${tenant.slug}/admin/login`
+    await navigator.clipboard.writeText(loginUrl)
+    alert('Login-Link kopiert.')
+  }
+
   const assignAdmin = async () => {
     const supabase = assertSupabase()
     const target = profiles.find((p) => (p.email || '').toLowerCase() === assign.email.toLowerCase())
-    if (!target) return alert('Profil mit dieser E-Mail nicht gefunden. User muss sich zuerst einmal einloggen oder in Supabase Auth existieren.')
+    if (!target) {
+      return alert('Profil mit dieser E-Mail nicht gefunden. User muss sich zuerst einmal über den Login-Link registrieren oder in Supabase Auth existieren. Nutze unten "Einladungs-Mail" oder "Login-Link kopieren".')
+    }
     const { error } = await supabase.from('profiles').update({ role: 'customer_admin', tenant_id: assign.tenant_id || null }).eq('id', target.id)
     if (error) return alert(error.message)
     setAssign({ email: '', tenant_id: '' })
     load()
+    alert('Kunden-Admin freigeschaltet.')
   }
 
   const createTenant = async () => {
@@ -70,6 +100,14 @@ export default function SuperadminDashboard() {
     const { error } = await supabase.from('tenants').insert(payload)
     if (error) return alert(error.message)
     setForm(defaultForm)
+    load()
+  }
+
+  const deleteTenant = async (tenant) => {
+    const check = window.prompt(`Zum Löschen bitte den Slug eingeben: ${tenant.slug}`)
+    if (check !== tenant.slug) return
+    const { error } = await assertSupabase().from('tenants').delete().eq('id', tenant.id)
+    if (error) return alert(error.message)
     load()
   }
 
@@ -94,7 +132,7 @@ export default function SuperadminDashboard() {
         <div className='panel'>
           <h3>Bestehende Kunden</h3>
           <div className='stack'>
-            {tenants.map((t)=><div className='panel nested' key={t.id}><div className='listRow'><div><strong>{t.display_name}</strong><div className='subtle'>/{t.slug} · {t.slot_count} Slots</div><div className='tenantColorRow'><span className='colorSwatch small' style={{ background:t.brand_color }} /><span className='colorSwatch small' style={{ background:t.accent_color }} /></div></div><Link className='pill' to={`/${t.slug}`}>Öffnen</Link></div></div>)}
+            {tenants.map((t)=><div className='panel nested' key={t.id}><div className='listRow'><div><strong>{t.display_name}</strong><div className='subtle'>/{t.slug} · {t.slot_count} Slots</div><div className='tenantColorRow'><span className='colorSwatch small' style={{ background:t.brand_color }} /><span className='colorSwatch small' style={{ background:t.accent_color }} /></div></div><div className='actionRow wrap'><a className='pill ghost' href={`mailto:?subject=${encodeURIComponent(`SnackOfYourDay – ${t.display_name}`)}&body=${encodeURIComponent(`Kundenlink: ${window.location.origin}/${t.slug}`)}`}>E-Mail</a><Link className='pill' to={`/${t.slug}`}>Öffnen</Link><button className='pill danger' onClick={()=>deleteTenant(t)}>Löschen</button></div></div></div>)}
           </div>
         </div>
       </div>
@@ -102,7 +140,12 @@ export default function SuperadminDashboard() {
         <h3>Kunden-Admin zuweisen</h3>
         <label>E-Mail<input value={assign.email} onChange={(e)=>setAssign({...assign,email:e.target.value})} placeholder='kunde@firma.ch' /></label>
         <label>Kunde<select value={assign.tenant_id} onChange={(e)=>setAssign({...assign,tenant_id:e.target.value})}><option value=''>wählen</option>{tenants.map((t)=><option key={t.id} value={t.id}>{t.display_name}</option>)}</select></label>
-        <button className='btn' onClick={assignAdmin}>Admin freischalten</button>
+        <div className='actionRow wrap'>
+          <button className='btn' onClick={assignAdmin}>Admin freischalten</button>
+          <button className='pill ghost' onClick={sendInvite}>Einladungs-Mail</button>
+          <button className='pill ghost' onClick={copyInvite}>Login-Link kopieren</button>
+        </div>
+        <div className='hintBox'>Ablauf: Zuerst Einladungs-Mail schicken → Kunde registriert sich einmal über den Login-Link → danach hier Admin freischalten.</div>
         <div className='stack' style={{marginTop:12}}>
           {profiles.map((p)=><div className='miniRow' key={p.id}><span>{p.email || p.id}</span><span>{p.role}{p.tenant_id ? ' · tenant' : ''}</span></div>)}
         </div>

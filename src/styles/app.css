@@ -37,3 +37,11 @@ a{color:inherit;text-decoration:none} button,input,select{font:inherit}
   .machineSlot{min-height:168px;padding:10px}
   .slotPackshot,.dialogPlaceholder{width:78px;height:96px;font-size:24px}
 }
+
+
+.wrap{flex-wrap:wrap}.gap8{gap:8px}.hintBox{margin-top:12px;padding:12px 14px;border-radius:14px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03);color:var(--muted)}
+.checkLine{display:flex;flex-direction:row;align-items:center;gap:10px}.checkLine.compact{gap:8px;font-size:14px}
+.productAdminGrid{display:grid;grid-template-columns:1fr;gap:12px}.productAdminCard{display:grid;grid-template-columns:96px minmax(0,1fr);gap:12px;padding:12px;border-radius:18px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03)}.productThumb{width:96px;height:96px;border-radius:16px;display:grid;place-items:center;background:rgba(255,255,255,.06);overflow:hidden}.productThumb img{width:100%;height:100%;object-fit:contain}.productThumb span{font-size:28px;font-weight:900;color:#fff;background:linear-gradient(180deg,var(--brand),color-mix(in oklab,var(--brand2) 75%,black));width:72px;height:72px;border-radius:20px;display:grid;place-items:center}
+.paymentEditor{padding:12px;border-radius:16px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03);display:flex;flex-direction:column;gap:8px}
+.slotGridAdmin{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.slotAdminCard{padding:12px;border-radius:18px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03);display:flex;flex-direction:column;gap:10px}.slotAdminTop{display:flex;justify-content:space-between;gap:8px;align-items:center}.slotAdminPreview,.slotAdminPlaceholder{width:100%;height:120px;border-radius:14px;background:rgba(255,255,255,.05);display:grid;place-items:center;object-fit:contain}.slotAdminPlaceholder{border:1px dashed rgba(255,255,255,.14);color:var(--muted);font-weight:800}
+@media (min-width:860px){.productAdminGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.slotGridAdmin{grid-template-columns:repeat(3,minmax(0,1fr))}}

@@ -1,49 +1,22 @@
-# Vendora V1
+# SnackOfYourDay V2
 
-Multi-Tenant Webautomat mit Subpfad-Struktur:
-- `/superadmin/login`
-- `/:tenantSlug`
-- `/:tenantSlug/admin/login`
+V2 bringt folgende Verbesserungen:
 
-## Lokal starten
-1. `npm install`
-2. `.env.example` nach `.env` kopieren
-3. Supabase URL + Anon Key eintragen
-4. `npm run dev`
+- moderner virtueller Automat statt einfachem Slot-Raster
+- Browser-Tab nicht mehr `combatcart15`, sondern `SnackOfYourDay`
+- dynamischer Seitentitel pro Kunde, z. B. `Swisscom Test`
+- dynamisches Favicon je Kunde auf Basis von Name + Farben
+- verbesserte Farbauswahl im Superadmin mit Vorschau + Hex-Wert
+- Build getestet mit Netlify / Vite / Supabase
 
-## Was ist drin
-- Superadmin Dashboard: Kunden anlegen
-- Kunden-URL über Subpfad, z.B. `/swisscom`
-- Kunden-Admin Dashboard: Produkte, Slots, Bestellungen
-- Öffentliche Bestellung + Zahlungsseite
-- Demo-Mandant `/demo`
+## Deploy
 
-## Wichtige Hinweise
-- Bildupload ist in dieser V1 noch nicht eingebaut. Produkte nutzen aktuell Name + Preis.
-- Zahlung ist als strukturierte Anzeige vorbereitet. Echte TWINT-/Kreditkarten-Bestätigung braucht später Provider-Anbindung.
-- Kunden-Admin-Zuweisung läuft über `profiles` in Supabase.
+- Build command: `npm run build`
+- Publish directory: `dist`
+- Environment variables:
+  - `VITE_SUPABASE_URL`
+  - `VITE_SUPABASE_ANON_KEY`
 
-## Erster Setup-Ablauf
-1. SQL aus `supabase/schema.sql` komplett in Supabase SQL Editor ausführen.
-2. In Supabase Auth einen User für dich erstellen.
-3. Danach im SQL Editor einmal ausführen:
-   ```sql
-   update public.profiles
-   set role = 'superadmin'
-   where email = 'DEINE-EMAIL';
-   ```
-4. In Netlify Umgebungsvariablen setzen:
-   - `VITE_SUPABASE_URL`
-   - `VITE_SUPABASE_ANON_KEY`
-5. Deploy auf Netlify.
-6. Auf `/superadmin/login` einloggen.
-7. Kunden erstellen, z.B. `swisscom`.
-8. Kunde ist erreichbar unter `/swisscom`.
-9. Kunde-Admin erstellt sich zuerst einen Auth-User. Danach im Superadmin Dashboard per E-Mail diesem Kunden zuweisen.
+## Hinweis
 
-## Empfohlene V2
-- Storage Upload für Produktbilder / Logos
-- echtes Theme-Builder UI
-- Zahlungsprovider Webhooks
-- Rollen `staff`, `viewer`, `manager`
-- echte Lizenzverwaltung
+Wenn du bereits eine laufende Netlify-Site hast, kannst du diese Version einfach über GitHub hochladen und neu deployen.
