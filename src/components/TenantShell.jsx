@@ -9,6 +9,35 @@ export const useTenant = () => React.useContext(TenantContext)
 
 function cartKey(slug) { return `vendora_cart_${slug}` }
 
+function setDynamicFavicon(tenant) {
+  if (!tenant) return
+  const title = tenant.display_name || 'SnackOfYourDay'
+  document.title = title
+  const canvas = document.createElement('canvas')
+  canvas.width = 64
+  canvas.height = 64
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return
+  const gradient = ctx.createLinearGradient(0, 0, 64, 64)
+  gradient.addColorStop(0, tenant.brand_color || '#1d4ed8')
+  gradient.addColorStop(1, tenant.accent_color || '#0f172a')
+  ctx.fillStyle = gradient
+  ctx.fillRect(0, 0, 64, 64)
+  ctx.fillStyle = '#ffffff'
+  ctx.font = 'bold 24px Inter, Arial, sans-serif'
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  const initials = title.split(' ').slice(0, 2).map((part) => part[0]).join('').toUpperCase()
+  ctx.fillText(initials || 'S', 32, 33)
+  let link = document.querySelector("link[rel='icon']")
+  if (!link) {
+    link = document.createElement('link')
+    link.setAttribute('rel', 'icon')
+    document.head.appendChild(link)
+  }
+  link.setAttribute('href', canvas.toDataURL('image/png'))
+}
+
 export default function TenantShell({ children }) {
   const { tenantSlug } = useParams()
   const location = useLocation()
@@ -40,6 +69,10 @@ export default function TenantShell({ children }) {
       .finally(() => active && setLoading(false))
     return () => { active = false }
   }, [tenantSlug])
+
+  useEffect(() => {
+    if (tenant) setDynamicFavicon(tenant)
+  }, [tenant])
 
   const value = useMemo(() => {
     const addToCart = (item) => {
