@@ -11,6 +11,16 @@ create table if not exists public.tenants (
   slot_count int not null default 15 check (slot_count between 1 and 100),
   brand_color text default '#1d4ed8',
   accent_color text default '#0f172a',
+  background_type text default 'gradient',
+  background_value text,
+  background_image text,
+  machine_frame_style text default 'glass',
+  machine_frame_image text,
+  logo_url text,
+  logo_align text default 'left',
+  logo_size int default 88,
+  header_text text,
+  order_success_text text,
   is_active boolean not null default true,
   created_at timestamptz not null default now()
 );
@@ -42,6 +52,17 @@ create table if not exists public.tenant_slots (
   primary key (tenant_id, slot_no)
 );
 
+
+create table if not exists public.tenant_pickup_locations (
+  id uuid primary key default gen_random_uuid(),
+  tenant_id uuid not null references public.tenants(id) on delete cascade,
+  label text not null,
+  details text,
+  sort_order int not null default 10,
+  is_active boolean not null default true,
+  created_at timestamptz not null default now()
+);
+
 create table if not exists public.tenant_payment_methods (
   id uuid primary key default gen_random_uuid(),
   tenant_id uuid not null references public.tenants(id) on delete cascade,
@@ -63,6 +84,8 @@ create table if not exists public.orders (
   phone text not null,
   contact_email text,
   pickup_note text,
+  pickup_location_id uuid references public.tenant_pickup_locations(id) on delete set null,
+  pickup_location_label text,
   total_amount numeric(10,2) not null default 0,
   status text not null default 'new' check (status in ('new','payment_marked','ready','done')),
   created_at timestamptz not null default now()
@@ -99,6 +122,7 @@ alter table public.tenants enable row level security;
 alter table public.profiles enable row level security;
 alter table public.products enable row level security;
 alter table public.tenant_slots enable row level security;
+alter table public.tenant_pickup_locations enable row level security;
 alter table public.tenant_payment_methods enable row level security;
 alter table public.orders enable row level security;
 alter table public.order_items enable row level security;
@@ -124,6 +148,9 @@ create policy "tenant products admin" on public.products for all using (public.s
 
 create policy "public slots read" on public.tenant_slots for select using (true);
 create policy "tenant slots admin" on public.tenant_slots for all using (public.same_tenant(tenant_id)) with check (public.same_tenant(tenant_id));
+
+create policy "public pickup read" on public.tenant_pickup_locations for select using (is_active = true);
+create policy "tenant pickup admin" on public.tenant_pickup_locations for all using (public.same_tenant(tenant_id)) with check (public.same_tenant(tenant_id));
 
 create policy "public payments read" on public.tenant_payment_methods for select using (is_active = true);
 create policy "tenant payments admin" on public.tenant_payment_methods for all using (public.same_tenant(tenant_id)) with check (public.same_tenant(tenant_id));
@@ -159,3 +186,9 @@ insert into public.tenant_slots (tenant_id, slot_no, product_id, is_active)
 select (select id from t), rn, id, true from prods
 where rn <= 5
 on conflict (tenant_id, slot_no) do nothing;
+
+
+with t as (select id from public.tenants where slug = 'demo')
+insert into public.tenant_pickup_locations (tenant_id, label, details, sort_order, is_active)
+select t.id, 'Hauptstandort', 'Standard Abholort der Demo', 1, true from t
+where not exists (select 1 from public.tenant_pickup_locations pl where pl.tenant_id = t.id);

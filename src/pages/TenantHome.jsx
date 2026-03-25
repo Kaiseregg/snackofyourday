@@ -55,7 +55,7 @@ export default function TenantHome() {
       <section className='machineIntro panel'>
         <div>
           <div className='eyebrow'>Digitaler Firmenautomat</div>
-          <h1>{tenant.display_name}</h1>
+          <h1>{tenant.header_text || tenant.display_name}</h1>
           <p>{tenant.welcome_text || 'Bestellen ohne physischen Automaten. Schnell, modern und direkt für deine Mitarbeitenden.'}</p>
         </div>
         <div className='machineIntroStats'>
@@ -70,7 +70,7 @@ export default function TenantHome() {
           <div className='machineHeader'>
             <div>
               <div className='machineBrand'>{tenant.display_name}</div>
-              <div className='machineSub'>SnackOfYourDay · App-Style Automat</div>
+              <div className='machineSub'>{tenant.tagline || 'SnackOfYourDay · App-Style Automat'}</div>
             </div>
             <div className='machineDisplay'>
               <span>Online</span>
@@ -126,9 +126,9 @@ export default function TenantHome() {
                 <strong>{cartCount}</strong>
               </button>
               <div className='paymentStack'>
-                <div className='payChip'>TWINT</div>
-                <div className='payChip'>Card</div>
-                <div className='payChip'>Pickup</div>
+                <div className='payChip'>{tenant.machine_frame_style || 'Custom Frame'}</div>
+                <div className='payChip'>{tenant.logo_url ? 'Branding aktiv' : 'Logo optional'}</div>
+                <div className='payChip'>Pickup ready</div>
               </div>
               <div className='machineInfoCard'>
                 <span>Total</span>

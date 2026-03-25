@@ -1,43 +1,41 @@
--- V6 Upgrade for SnackOfYourDay
-alter table if exists public.tenants add column if not exists logo_url text;
-alter table if exists public.tenants add column if not exists header_text text;
-alter table if exists public.tenants add column if not exists tagline text;
-alter table if exists public.tenants add column if not exists background_image_url text;
-alter table if exists public.tenants add column if not exists frame_image_url text;
-alter table if exists public.tenants add column if not exists frame_color text default '#111827';
-alter table if exists public.tenants add column if not exists pickup_options text default '';
-alter table if exists public.tenants add column if not exists order_notify_email text;
-alter table if exists public.tenants add column if not exists customer_header_note text;
-alter table if exists public.tenants add column if not exists payment_settings jsonb default '{}'::jsonb;
+alter table public.tenants add column if not exists background_type text default 'gradient';
+alter table public.tenants add column if not exists background_value text;
+alter table public.tenants add column if not exists background_image text;
+alter table public.tenants add column if not exists machine_frame_style text default 'glass';
+alter table public.tenants add column if not exists machine_frame_image text;
+alter table public.tenants add column if not exists logo_url text;
+alter table public.tenants add column if not exists logo_align text default 'left';
+alter table public.tenants add column if not exists logo_size int default 88;
+alter table public.tenants add column if not exists header_text text;
+alter table public.tenants add column if not exists order_success_text text;
 
-alter table if exists public.products add column if not exists image_url text;
-alter table if exists public.products add column if not exists active boolean default true;
-alter table if exists public.products add column if not exists description text;
-
-alter table if exists public.orders add column if not exists email text;
-alter table if exists public.orders add column if not exists pickup_location text;
-alter table if exists public.orders add column if not exists customer_note text;
-alter table if exists public.orders add column if not exists payment_method text;
-alter table if exists public.orders add column if not exists total numeric(10,2) default 0;
-alter table if exists public.orders add column if not exists first_name text;
-alter table if exists public.orders add column if not exists last_name text;
-alter table if exists public.orders add column if not exists phone text;
-
-alter table if exists public.order_items add column if not exists product_name text;
-alter table if exists public.order_items add column if not exists unit_price numeric(10,2) default 0;
-alter table if exists public.order_items add column if not exists line_total numeric(10,2) default 0;
-alter table if exists public.order_items add column if not exists image_url text;
-
-create table if not exists public.tenant_slots (
+create table if not exists public.tenant_pickup_locations (
   id uuid primary key default gen_random_uuid(),
   tenant_id uuid not null references public.tenants(id) on delete cascade,
-  slot_number integer not null,
-  product_id uuid null references public.products(id) on delete set null,
-  created_at timestamptz not null default now(),
-  unique (tenant_id, slot_number)
+  label text not null,
+  details text,
+  sort_order int not null default 10,
+  is_active boolean not null default true,
+  created_at timestamptz not null default now()
 );
 
-create index if not exists tenant_slots_tenant_idx on public.tenant_slots(tenant_id);
-create index if not exists products_tenant_idx on public.products(tenant_id);
-create index if not exists orders_tenant_idx on public.orders(tenant_id);
-create index if not exists order_items_order_idx on public.order_items(order_id);
+alter table public.orders add column if not exists pickup_location_id uuid references public.tenant_pickup_locations(id) on delete set null;
+alter table public.orders add column if not exists pickup_location_label text;
+
+alter table public.tenant_pickup_locations enable row level security;
+
+create policy "public pickup read" on public.tenant_pickup_locations for select using (is_active = true);
+create policy "tenant pickup admin" on public.tenant_pickup_locations for all using (public.same_tenant(tenant_id)) with check (public.same_tenant(tenant_id));
+
+update public.tenants
+set header_text = coalesce(header_text, display_name),
+    background_value = coalesce(background_value, 'linear-gradient(135deg, ' || coalesce(brand_color,'#2563eb') || ', ' || coalesce(accent_color,'#0f172a') || ')'),
+    machine_frame_style = coalesce(machine_frame_style, 'glass')
+where true;
+
+insert into public.tenant_pickup_locations (tenant_id, label, details, sort_order, is_active)
+select id, 'Hauptstandort', coalesce(pickup_hint, 'Standard Abholort'), 1, true
+from public.tenants t
+where not exists (
+  select 1 from public.tenant_pickup_locations l where l.tenant_id = t.id
+);

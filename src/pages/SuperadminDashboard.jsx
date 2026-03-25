@@ -4,7 +4,17 @@ import { useApp } from '../app/state'
 import { assertSupabase } from '../lib/supabase'
 import { slugify } from '../lib/utils'
 
-const defaultForm = { display_name: '', slug: '', slot_count: 15, brand_color: '#1d4ed8', accent_color: '#0f172a', pickup_hint: '', order_notify_email: '' }
+const defaultForm = {
+  display_name: '',
+  slug: '',
+  slot_count: 15,
+  brand_color: '#2563eb',
+  accent_color: '#0f172a',
+  pickup_hint: '',
+  order_notify_email: '',
+  header_text: '',
+  tagline: '',
+}
 
 function ColorField({ label, value, onChange }) {
   return (
@@ -31,34 +41,30 @@ function TenantSettingsCard({ tenant, onSave, onDelete }) {
         <div>
           <strong>{tenant.display_name}</strong>
           <div className='subtle'>/{tenant.slug} · {tenant.slot_count} Slots</div>
-          <div className='tenantColorRow'>
-            <span className='colorSwatch small' style={{ background: local.brand_color }} />
-            <span className='colorSwatch small' style={{ background: local.accent_color }} />
-          </div>
         </div>
         <div className='actionRow wrap'>
-          <a className='pill ghost' href={`mailto:?subject=${encodeURIComponent(`SnackOfYourDay – ${tenant.display_name}`)}&body=${encodeURIComponent(`Kundenlink: ${window.location.origin}/${tenant.slug}`)}`}>E-Mail</a>
+          <a className='pill ghost' href={`mailto:?subject=${encodeURIComponent(`Vendora – ${tenant.display_name}`)}&body=${encodeURIComponent(`Kundenlink: ${window.location.origin}/${tenant.slug}`)}`}>E-Mail</a>
+          <Link className='pill ghost' to={`/${tenant.slug}/admin/dashboard`}>Setup</Link>
           <Link className='pill' to={`/${tenant.slug}`}>Öffnen</Link>
           <button className='pill danger' onClick={() => onDelete(tenant)}>Löschen</button>
         </div>
       </div>
       <div className='formGrid topPad'>
+        <label>Header
+          <input value={local.header_text || ''} onChange={(e) => setLocal({ ...local, header_text: e.target.value })} placeholder='Snack Automat' />
+        </label>
+        <label>Tagline
+          <input value={local.tagline || ''} onChange={(e) => setLocal({ ...local, tagline: e.target.value })} placeholder='Virtueller Firmenautomat' />
+        </label>
         <label>Abholhinweis
           <input value={local.pickup_hint || ''} onChange={(e) => setLocal({ ...local, pickup_hint: e.target.value })} placeholder='z.B. Abholung beim Empfang bis 11:30 Uhr' />
         </label>
         <label>Bestell-E-Mail
           <input value={local.order_notify_email || ''} onChange={(e) => setLocal({ ...local, order_notify_email: e.target.value })} placeholder='bestellungen@firma.ch' />
         </label>
-        <label>Willkommens-Text
-          <input value={local.welcome_text || ''} onChange={(e) => setLocal({ ...local, welcome_text: e.target.value })} placeholder='Willkommen im Firmenautomaten.' />
-        </label>
-        <label>Tagline
-          <input value={local.tagline || ''} onChange={(e) => setLocal({ ...local, tagline: e.target.value })} placeholder='Virtueller Firmenautomat' />
-        </label>
       </div>
       <div className='actionRow wrap topPad'>
         <button className='btn' onClick={() => onSave(local)}>Änderungen speichern</button>
-        <div className='subtle'>Automatische E-Mail-Benachrichtigung wird in der nächsten Server-Version ergänzt. Bestellungen sind bereits im Kunden-Admin sichtbar.</div>
       </div>
     </div>
   )
@@ -97,25 +103,13 @@ export default function SuperadminDashboard() {
     if (!assign.email || !selectedTenant) return alert('Bitte E-Mail und Kunde wählen.')
     const loginUrl = `${window.location.origin}/${selectedTenant.slug}/admin/login`
     const subject = encodeURIComponent(`Kunden-Admin Zugang für ${selectedTenant.display_name}`)
-    const body = encodeURIComponent(`Hallo,
-
-du wurdest als Kunden-Admin für ${selectedTenant.display_name} vorgesehen.
-
-1. Öffne zuerst diesen Login-Link:
-${loginUrl}
-2. Klicke auf "Registrieren" und erstelle deinen Zugang.
-3. Bestätige die E-Mail, falls du eine Bestätigungs-Mail erhältst.
-4. Danach kann der Hauptadmin dich hier freischalten.
-
-Viele Grüsse
-SnackOfYourDay`)
+    const body = encodeURIComponent(`Hallo,\n\ndu wurdest als Kunden-Admin für ${selectedTenant.display_name} vorgesehen.\n\n1. Öffne zuerst diesen Login-Link:\n${loginUrl}\n2. Klicke auf \"Registrieren\" und erstelle deinen Zugang.\n3. Bestätige deine E-Mail.\n4. Danach kann der Hauptadmin dich freischalten.\n\nViele Grüsse\nVendora`)
     window.open(`mailto:${assign.email}?subject=${subject}&body=${body}`)
   }
 
   const copyInvite = async () => {
     if (!selectedTenant) return alert('Bitte zuerst Kunde wählen.')
-    const loginUrl = `${window.location.origin}/${selectedTenant.slug}/admin/login`
-    await navigator.clipboard.writeText(loginUrl)
+    await navigator.clipboard.writeText(`${window.location.origin}/${selectedTenant.slug}/admin/login`)
     alert('Login-Link kopiert.')
   }
 
@@ -123,11 +117,9 @@ SnackOfYourDay`)
     const supabase = assertSupabase()
     if (!assign.email || !assign.tenant_id) return alert('Bitte E-Mail und Kunde wählen.')
     const target = visibleProfiles.find((p) => (p.email || '').toLowerCase() === assign.email.toLowerCase())
-    if (!target) {
-      return alert('Profil mit dieser E-Mail nicht gefunden. User muss sich zuerst einmal über den Login-Link registrieren oder in Supabase Auth existieren. Nutze unten „Einladungs-Mail“ oder „Login-Link kopieren“.')
-    }
+    if (!target) return alert('Profil nicht gefunden. Der Kunde muss sich zuerst registrieren.')
     if ((target.email || '').toLowerCase() === currentUserEmail) return alert('Der aktuelle Superadmin darf nicht als Kunden-Admin dieses Mandanten freigeschaltet werden.')
-    if (target.role === 'superadmin') return alert('Ein Superadmin darf nicht als Kunden-Admin zugewiesen werden. Bitte eine separate Kunden-E-Mail verwenden.')
+    if (target.role === 'superadmin') return alert('Ein Superadmin darf nicht als Kunden-Admin zugewiesen werden.')
     const { error } = await supabase.from('profiles').update({ role: 'customer_admin', tenant_id: assign.tenant_id }).eq('id', target.id)
     if (error) return alert(error.message)
     setAssign({ email: '', tenant_id: '' })
@@ -137,12 +129,13 @@ SnackOfYourDay`)
 
   const seedTenantDefaults = async (tenantId) => {
     const supabase = assertSupabase()
-    const methods = [
-      { tenant_id: tenantId, type: 'twint', label: 'TWINT', instructions: 'TWINT-Zahlung gemäss Firmenvorgabe.', sort_order: 1, is_active: true },
-      { tenant_id: tenantId, type: 'card', label: 'Karte', instructions: 'Kartenzahlung gemäss Firmenvorgabe.', sort_order: 2, is_active: true },
-      { tenant_id: tenantId, type: 'other', label: 'Abholung', instructions: 'Bestellung wird nach Bestätigung bereitgestellt.', sort_order: 3, is_active: true },
-    ]
-    await supabase.from('tenant_payment_methods').insert(methods)
+    await supabase.from('tenant_payment_methods').insert([
+      { tenant_id: tenantId, type: 'twint', label: 'TWINT Business', instructions: 'TWINT-Zahlung gemäss Firmenvorgabe.', sort_order: 1, is_active: true },
+      { tenant_id: tenantId, type: 'card', label: 'Kredit-/Debitkarte', instructions: 'Stripe-ready Struktur vorbereitet.', sort_order: 2, is_active: true },
+      { tenant_id: tenantId, type: 'invoice', label: 'Monatsabrechnung', instructions: 'Interne Monatsabrechnung für diesen Kunden.', sort_order: 3, is_active: true },
+      { tenant_id: tenantId, type: 'other', label: 'TWINT Telefonnummer', instructions: 'Manuelle TWINT Zahlung ohne Verifikation.', sort_order: 4, is_active: false },
+    ])
+    await supabase.from('tenant_pickup_locations').insert({ tenant_id: tenantId, label: 'Hauptstandort', details: 'Standard Abholort für neue Kunden.', sort_order: 1, is_active: true })
   }
 
   const createTenant = async () => {
@@ -155,8 +148,12 @@ SnackOfYourDay`)
       accent_color: form.accent_color,
       pickup_hint: form.pickup_hint || null,
       order_notify_email: form.order_notify_email || null,
-      tagline: 'Virtueller Firmenautomat',
-      welcome_text: form.welcome_text || null,
+      header_text: form.header_text || form.display_name || null,
+      tagline: form.tagline || 'Virtueller Firmenautomat',
+      welcome_text: 'Willkommen bei eurem digitalen Firmenautomaten.',
+      background_type: 'gradient',
+      background_value: `linear-gradient(135deg, ${form.brand_color}, ${form.accent_color})`,
+      machine_frame_style: 'glass',
       is_active: true,
     }
     const { data, error } = await supabase.from('tenants').insert(payload).select('*').single()
@@ -170,8 +167,8 @@ SnackOfYourDay`)
     const { error } = await assertSupabase().from('tenants').update({
       pickup_hint: tenant.pickup_hint || null,
       order_notify_email: tenant.order_notify_email || null,
-      welcome_text: tenant.welcome_text || null,
       tagline: tenant.tagline || null,
+      header_text: tenant.header_text || null,
     }).eq('id', tenant.id)
     if (error) return alert(error.message)
     load()
@@ -188,20 +185,22 @@ SnackOfYourDay`)
 
   return (
     <div className='stack'>
-      <div className='panel listRow'><h2>Mandanten</h2><button className='pill ghost' onClick={async()=>{await assertSupabase().auth.signOut(); nav('/superadmin/login')}}>Logout</button></div>
+      <div className='panel listRow'><h2>V6 Kundenverwaltung</h2><button className='pill ghost' onClick={async()=>{await assertSupabase().auth.signOut(); nav('/superadmin/login')}}>Logout</button></div>
       <div className='gridTwo'>
         <div className='panel'>
           <h3>Neuen Kunden anlegen</h3>
           <label>Firmenname<input value={form.display_name} onChange={(e)=>setForm({...form,display_name:e.target.value})} /></label>
           <label>Slug<input value={form.slug} onChange={(e)=>setForm({...form,slug:e.target.value})} placeholder='swisscom' /></label>
+          <label>Header<input value={form.header_text} onChange={(e)=>setForm({...form,header_text:e.target.value})} placeholder='Firmenautomat' /></label>
+          <label>Tagline<input value={form.tagline} onChange={(e)=>setForm({...form,tagline:e.target.value})} placeholder='Snacks & Drinks' /></label>
           <label>Slots<select value={form.slot_count} onChange={(e)=>setForm({...form,slot_count:e.target.value})}><option>5</option><option>10</option><option>15</option><option>20</option><option>25</option></select></label>
-          <ColorField label='Brand Color' value={form.brand_color} onChange={(brand_color) => setForm({ ...form, brand_color })} />
+          <ColorField label='Primary Color' value={form.brand_color} onChange={(brand_color) => setForm({ ...form, brand_color })} />
           <ColorField label='Accent Color' value={form.accent_color} onChange={(accent_color) => setForm({ ...form, accent_color })} />
           <label>Abholhinweis<input value={form.pickup_hint} onChange={(e)=>setForm({...form,pickup_hint:e.target.value})} placeholder='z.B. Abholung beim Empfang' /></label>
           <label>Bestell-E-Mail<input value={form.order_notify_email} onChange={(e)=>setForm({...form,order_notify_email:e.target.value})} placeholder='bestellungen@firma.ch' /></label>
           <div className='tenantPreviewCard' style={{ '--preview-brand': form.brand_color, '--preview-accent': form.accent_color }}>
-            <div className='tenantPreviewEyebrow'>Vorschau</div>
-            <strong>{form.display_name || 'Neuer Kunde'}</strong>
+            <div className='tenantPreviewEyebrow'>V6 Vorschau</div>
+            <strong>{form.header_text || form.display_name || 'Neuer Kunde'}</strong>
             <span>/{slugify(form.slug || form.display_name || 'kunde')}</span>
           </div>
           <button className='btn block' onClick={createTenant}>Kunde erstellen</button>
@@ -222,8 +221,8 @@ SnackOfYourDay`)
           <button className='pill ghost' onClick={sendInvite}>Einladungs-Mail</button>
           <button className='pill ghost' onClick={copyInvite}>Login-Link kopieren</button>
         </div>
-        <div className='hintBox'>Ablauf: Zuerst Einladungs-Mail schicken → Kunde registriert sich auf der Login-Seite über den Tab „Registrieren“ → E-Mail bestätigen → danach hier Admin freischalten.</div>
-        <div className='stack' style={{marginTop:12}}>
+        <div className='hintBox'>Ablauf: Einladungs-Mail schicken → Kunde registriert sich → danach hier freischalten.</div>
+        <div className='stack topPad'>
           {visibleProfiles.map((p)=><div className='miniRow' key={p.id}><span>{p.email || p.id}</span><span>{p.role}{p.tenant_id ? ' · tenant' : ''}</span></div>)}
         </div>
       </div>

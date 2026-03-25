@@ -40,6 +40,15 @@ function setDynamicFavicon(tenant) {
   link.setAttribute('href', canvas.toDataURL('image/png'))
 }
 
+function buildTenantBackground(tenant) {
+  const image = tenant.background_image || ''
+  const value = tenant.background_value || ''
+  if (image) return `linear-gradient(180deg, rgba(3,7,18,.72), rgba(3,7,18,.9)), url(${image}) center/cover fixed`
+  if (tenant.background_type === 'gradient' && value) return value
+  if (tenant.background_type === 'color' && value) return value
+  return 'radial-gradient(circle at top, rgba(37,99,235,.18), rgba(5,10,20,.96) 55%)'
+}
+
 export default function TenantShell({ children }) {
   const { tenantSlug } = useParams()
   const location = useLocation()
@@ -104,12 +113,23 @@ export default function TenantShell({ children }) {
 
   return (
     <TenantContext.Provider value={value}>
-      <div className='appRoot' style={{ '--brand': tenant.brand_color || '#1d4ed8', '--brand2': tenant.accent_color || '#0f172a' }}>
+      <div
+        className='appRoot tenantCustomRoot'
+        style={{
+          '--brand': tenant.brand_color || '#1d4ed8',
+          '--brand2': tenant.accent_color || '#0f172a',
+          '--tenant-bg': buildTenantBackground(tenant),
+          '--logo-size': `${Math.min(Math.max(Number(tenant.logo_size || 88), 48), 220)}px`,
+        }}
+      >
         <header className='topbar'>
-          <div>
-            <div className='eyebrow'>{tenant.slug}</div>
-            <div className='title'>{tenant.display_name}</div>
-            <div className='subtle'>{tenant.tagline || 'Virtueller Automat'}</div>
+          <div className={`brandBlock align-${tenant.logo_align || 'left'}`}>
+            {tenant.logo_url && <img className='tenantTopLogo' src={tenant.logo_url} alt={tenant.display_name} />}
+            <div>
+              <div className='eyebrow'>{tenant.slug}</div>
+              <div className='title'>{tenant.header_text || tenant.display_name}</div>
+              <div className='subtle'>{tenant.tagline || 'Virtueller Automat'}</div>
+            </div>
           </div>
           <div className='topActions'>
             {!isAdmin && <Link className='pill' to={tenantPath(tenantSlug, '/cart')}>Warenkorb {value.cartCount}</Link>}

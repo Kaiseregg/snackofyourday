@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useTenant } from '../components/TenantShell'
+import { getOrderById } from '../lib/api'
 import { assertSupabase } from '../lib/supabase'
 import { money } from '../lib/utils'
 import { tenantPath } from '../lib/paths'
@@ -12,8 +13,7 @@ export default function TenantPayment() {
   const [order, setOrder] = useState(null)
 
   useEffect(() => {
-    const supabase = assertSupabase()
-    supabase.from('orders').select('*, payment_method:tenant_payment_methods(*)').eq('id', orderId).maybeSingle().then(({ data }) => setOrder(data))
+    getOrderById(orderId).then(setOrder).catch(console.error)
   }, [orderId])
 
   const markPaid = async () => {
@@ -32,6 +32,7 @@ export default function TenantPayment() {
       <div className='panel'>
         <strong>Bestellung {orderId}</strong>
         <div className='subtle'>{money(order.total_amount)}</div>
+        {order.pickup_location_label && <div className='subtle'>Abholung: {order.pickup_location_label}</div>}
       </div>
       <div className='panel'>
         <strong>{method?.label}</strong>
