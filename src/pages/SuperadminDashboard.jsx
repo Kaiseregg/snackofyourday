@@ -145,7 +145,7 @@ SnackOfYourDay`)
           <button className='pill ghost' onClick={sendInvite}>Einladungs-Mail</button>
           <button className='pill ghost' onClick={copyInvite}>Login-Link kopieren</button>
         </div>
-        <div className='hintBox'>Ablauf: Zuerst Einladungs-Mail schicken → Kunde registriert sich einmal über den Login-Link → danach hier Admin freischalten.</div>
+        <div className='hintBox'>Ablauf: Zuerst Einladungs-Mail schicken → Kunde registriert sich auf der Login-Seite über den Tab "Registrieren" → danach hier Admin freischalten.</div>
         <div className='stack' style={{marginTop:12}}>
           {profiles.map((p)=><div className='miniRow' key={p.id}><span>{p.email || p.id}</span><span>{p.role}{p.tenant_id ? ' · tenant' : ''}</span></div>)}
         </div>
