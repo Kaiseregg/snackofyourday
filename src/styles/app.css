@@ -47,3 +47,13 @@ a{color:inherit;text-decoration:none} button,input,select{font:inherit}
 @media (min-width:860px){.productAdminGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.slotGridAdmin{grid-template-columns:repeat(3,minmax(0,1fr))}}
 
 .successText{color:#b8ffd5}.tabLine{display:flex;gap:10px;margin-bottom:10px}.uploadPreview{padding:12px;border-radius:16px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08)}.uploadPreview img{width:100%;max-height:220px;object-fit:contain;border-radius:12px;background:rgba(255,255,255,.03)}
+
+.topPad{margin-top:12px}
+.tabButton{border:1px solid rgba(255,255,255,.14);border-radius:999px;padding:11px 18px;cursor:pointer;font-weight:800;background:rgba(255,255,255,.04);color:#cfe1ff}
+.tabButton.active{background:linear-gradient(180deg,var(--brand),color-mix(in oklab, var(--brand) 76%, black));color:#fff;border-color:transparent;box-shadow:0 10px 24px rgba(0,0,0,.22)}
+.tabButton:not(.active):hover{border-color:color-mix(in oklab, var(--brand) 55%, white);color:#fff}
+.authCard .btn[disabled]{opacity:.55;cursor:not-allowed}
+.errorText{margin-top:8px;padding:10px 12px;border-radius:12px;background:rgba(255,122,122,.08);border:1px solid rgba(255,122,122,.16)}
+.successText{margin-top:8px;padding:10px 12px;border-radius:12px;background:rgba(56,214,129,.08);border:1px solid rgba(56,214,129,.16)}
+.productAdminCard .actionRow .pill,.slotAdminCard select,.paymentEditor input,.panel .btn,.panel .pill,.topActions .pill{min-height:44px}
+@media (min-width: 1160px){.gridTwo{grid-template-columns:minmax(0,420px) minmax(0,1fr)}}

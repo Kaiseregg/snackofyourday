@@ -1,5 +1,6 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { useApp } from '../app/state'
 import { assertSupabase } from '../lib/supabase'
 import { tenantPath } from '../lib/paths'
 import { getTenantBySlug } from '../lib/api'
@@ -7,12 +8,19 @@ import { getTenantBySlug } from '../lib/api'
 export default function TenantAdminLogin() {
   const { tenantSlug } = useParams()
   const nav = useNavigate()
+  const { authUser, profile } = useApp()
   const [mode, setMode] = useState('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+
+  useEffect(() => {
+    if (profile?.role === 'superadmin') {
+      setError('Superadmin-Zugänge dürfen nicht als Kunden-Admin verwendet werden. Bitte separaten Kunden-Admin-Account benutzen.')
+    }
+  }, [profile])
 
   const login = async () => {
     setBusy(true); setError(''); setSuccess('')
@@ -41,10 +49,15 @@ export default function TenantAdminLogin() {
     setBusy(true); setError(''); setSuccess('')
     try {
       const supabase = assertSupabase()
-      const { error } = await supabase.auth.signUp({ email, password })
+      const redirect = `${window.location.origin}${tenantPath(tenantSlug, '/admin/login')}`
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { emailRedirectTo: redirect },
+      })
       if (error) throw error
       await supabase.auth.signOut()
-      setSuccess('Registrierung erstellt. Jetzt Hauptadmin bitten, deine E-Mail diesem Kunden als Admin zuzuweisen. Danach hier normal einloggen.')
+      setSuccess(`Registrierung erstellt. Prüfe jetzt deine E-Mail und bestätige den Account. Danach Hauptadmin bitten, deine E-Mail diesem Kunden als Admin zuzuweisen. Login-Link: ${redirect}`)
       setMode('login')
     } catch (err) {
       setError(err.message)
@@ -56,8 +69,8 @@ export default function TenantAdminLogin() {
   return (
     <div className='panel authCard'>
       <div className='tabLine'>
-        <button className={`pill ${mode === 'login' ? '' : 'ghost'}`} onClick={() => setMode('login')}>Login</button>
-        <button className={`pill ${mode === 'register' ? '' : 'ghost'}`} onClick={() => setMode('register')}>Registrieren</button>
+        <button className={`tabButton ${mode === 'login' ? 'active' : ''}`} onClick={() => setMode('login')}>Login</button>
+        <button className={`tabButton ${mode === 'register' ? 'active' : ''}`} onClick={() => setMode('register')}>Registrieren</button>
       </div>
       <h2>{mode === 'login' ? 'Kunden-Admin Login' : 'Kunden-Admin registrieren'}</h2>
       <div className='hintBox'>
@@ -67,7 +80,7 @@ export default function TenantAdminLogin() {
       <label>Passwort<input type='password' value={password} onChange={(e) => setPassword(e.target.value)} /></label>
       {error && <div className='errorText'>{error}</div>}
       {success && <div className='successText'>{success}</div>}
-      <button className='btn block' disabled={busy} onClick={mode === 'login' ? login : register}>
+      <button className='btn block' disabled={busy || profile?.role === 'superadmin'} onClick={mode === 'login' ? login : register}>
         {busy ? 'Bitte warten…' : mode === 'login' ? 'Login' : 'Registrierung starten'}
       </button>
     </div>

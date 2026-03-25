@@ -1,8 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { Link, useLocation, useParams } from 'react-router-dom'
+import { Link, useLocation, useParams, useNavigate } from 'react-router-dom'
 import { getTenantBySlug } from '../lib/api'
 import { money } from '../lib/utils'
 import { tenantPath } from '../lib/paths'
+import { useApp } from '../app/state'
+import { assertSupabase } from '../lib/supabase'
 
 const TenantContext = React.createContext(null)
 export const useTenant = () => React.useContext(TenantContext)
@@ -41,6 +43,8 @@ function setDynamicFavicon(tenant) {
 export default function TenantShell({ children }) {
   const { tenantSlug } = useParams()
   const location = useLocation()
+  const nav = useNavigate()
+  const { profile } = useApp()
   const [tenant, setTenant] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -74,6 +78,9 @@ export default function TenantShell({ children }) {
     if (tenant) setDynamicFavicon(tenant)
   }, [tenant])
 
+  const isAdmin = location.pathname.includes('/admin')
+  const isTenantAdmin = profile?.role === 'customer_admin' && profile?.tenant_id === tenant?.id
+
   const value = useMemo(() => {
     const addToCart = (item) => {
       setCart((prev) => {
@@ -92,8 +99,6 @@ export default function TenantShell({ children }) {
     }
   }, [tenant, tenantSlug, cart])
 
-  const isAdmin = location.pathname.includes('/admin')
-
   if (loading) return <div className='page'><div className='panel'>Lädt…</div></div>
   if (error || !tenant) return <div className='page'><div className='panel errorBox'>{error || 'Nicht gefunden'}</div></div>
 
@@ -108,7 +113,14 @@ export default function TenantShell({ children }) {
           </div>
           <div className='topActions'>
             {!isAdmin && <Link className='pill' to={tenantPath(tenantSlug, '/cart')}>Warenkorb {value.cartCount}</Link>}
-            <Link className='pill ghost' to={tenantPath(tenantSlug, '/admin/login')}>Kunden-Admin</Link>
+            {isTenantAdmin ? (
+              <>
+                <Link className='pill ghost' to={tenantPath(tenantSlug, '/admin/dashboard')}>Admin-Dashboard</Link>
+                <button className='pill ghost' onClick={async () => { await assertSupabase().auth.signOut(); nav(tenantPath(tenantSlug)) }}>Logout</button>
+              </>
+            ) : (
+              <Link className='pill ghost' to={tenantPath(tenantSlug, '/admin/login')}>Kunden-Admin</Link>
+            )}
           </div>
         </header>
         <main className='page'>{children}</main>

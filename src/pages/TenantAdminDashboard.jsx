@@ -131,7 +131,7 @@ export default function TenantAdminDashboard() {
         <div className='panel'>
           <h3>Zahlungsarten</h3>
           <div className='stack'>
-            {payments.map((p) => <div className='paymentEditor' key={p.id}><div className='miniRow'><strong>{p.type}</strong><label className='checkLine compact'><input type='checkbox' checked={p.is_active} onChange={(e) => updatePayment(p.id, { is_active: e.target.checked })} /> aktiv</label></div><input value={p.label} onChange={(e) => updatePayment(p.id, { label: e.target.value })} /><input value={p.payment_value || ''} onChange={(e) => updatePayment(p.id, { payment_value: e.target.value })} placeholder='Zahlwert / TWINT / Info' /></div>)}
+            {payments.map((p) => <div className='paymentEditor' key={p.id}><div className='miniRow'><strong>{p.type}</strong><label className='checkLine compact'><input type='checkbox' checked={p.is_active} onChange={(e) => updatePayment(p.id, { is_active: e.target.checked })} /> aktiv</label></div><input value={p.label} onChange={(e) => updatePayment(p.id, { label: e.target.value })} /><input value={p.payment_value || ''} onChange={(e) => updatePayment(p.id, { payment_value: e.target.value })} placeholder='Zahlwert / TWINT / Info' /><input value={p.instructions || ''} onChange={(e) => updatePayment(p.id, { instructions: e.target.value })} placeholder='Hinweis für Kunden' /></div>)}
           </div>
         </div>
       </div>
@@ -154,10 +154,13 @@ export default function TenantAdminDashboard() {
         </div>
       </div>
       <div className='panel'>
-        <h3>Bestellungen</h3>
+        <div className='listRow'>
+          <h3>Bestellungen</h3>
+          <div className='subtle'>Bestell-E-Mail: {tenant.order_notify_email || 'nicht gesetzt'}</div>
+        </div>
         <div className='stack'>
           {orders.length === 0 && <div className='subtle'>Noch keine Bestellungen vorhanden.</div>}
-          {orders.map((o) => <div className='panel nested' key={o.id}><div className='listRow'><div><strong>{o.id}</strong><div className='subtle'>{o.first_name} {o.last_name} · {o.phone} · {money(o.total_amount)}</div>{o.pickup_note && <div className='subtle'>{o.pickup_note}</div>}</div><select value={o.status} onChange={(e) => setOrderStatus(o.id, e.target.value)}><option>new</option><option>payment_marked</option><option>ready</option><option>done</option></select></div></div>)}
+          {orders.map((o) => <div className='panel nested' key={o.id}><div className='listRow'><div><strong>{o.id}</strong><div className='subtle'>{o.first_name} {o.last_name} · {o.phone}{o.contact_email ? ` · ${o.contact_email}` : ''} · {money(o.total_amount)}</div>{o.pickup_note && <div className='subtle'>{o.pickup_note}</div>}</div><select value={o.status} onChange={(e) => setOrderStatus(o.id, e.target.value)}><option>new</option><option>payment_marked</option><option>ready</option><option>done</option></select></div></div>)}
         </div>
       </div>
     </div>

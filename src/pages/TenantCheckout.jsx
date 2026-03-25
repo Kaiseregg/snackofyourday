@@ -27,14 +27,14 @@ export default function TenantCheckout() {
     try {
       const supabase = assertSupabase()
       const code = orderCode()
-      const mergedNote = [form.contact_email ? `E-Mail: ${form.contact_email}` : '', form.pickup_note].filter(Boolean).join(' | ')
       const { error } = await supabase.from('orders').insert({
         id: code,
         tenant_id: tenant.id,
         first_name: form.first_name,
         last_name: form.last_name,
         phone: form.phone,
-        pickup_note: mergedNote || null,
+        contact_email: form.contact_email || null,
+        pickup_note: form.pickup_note || null,
         payment_method_id: form.payment_method_id,
         total_amount: cartTotal,
         status: 'new',
@@ -63,12 +63,13 @@ export default function TenantCheckout() {
   return (
     <div className='stack'>
       <div className='panel'><h2>Kasse</h2></div>
+      {tenant.pickup_hint && <div className='hintBox'>Abholhinweis dieses Kunden: {tenant.pickup_hint}</div>}
       <div className='panel formGrid'>
         <label>Vorname<input value={form.first_name} onChange={(e) => setForm({ ...form, first_name: e.target.value })} /></label>
         <label>Name<input value={form.last_name} onChange={(e) => setForm({ ...form, last_name: e.target.value })} /></label>
         <label>Telefon<input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></label>
-        <label>E-Mail<input value={form.contact_email} onChange={(e) => setForm({ ...form, contact_email: e.target.value })} placeholder='optional' /></label>
-        <label>Abholhinweis<input value={form.pickup_note} onChange={(e) => setForm({ ...form, pickup_note: e.target.value })} placeholder='z.B. 11:30 / Empfang' /></label>
+        <label>E-Mail<input value={form.contact_email} onChange={(e) => setForm({ ...form, contact_email: e.target.value })} placeholder='name@firma.ch' /></label>
+        <label>Eigener Abholhinweis<input value={form.pickup_note} onChange={(e) => setForm({ ...form, pickup_note: e.target.value })} placeholder='z.B. 11:30 / Empfang' /></label>
         <label>Zahlungsart<select value={form.payment_method_id} onChange={(e) => setForm({ ...form, payment_method_id: e.target.value })}>{payments.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}</select></label>
       </div>
       <div className='panel listRow'><strong>Total</strong><strong>{money(cartTotal)}</strong></div>
